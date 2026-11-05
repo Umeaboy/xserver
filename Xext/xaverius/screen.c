@@ -20,7 +20,8 @@
 
 DevPrivateKeyRec XaveriusScreenPrivateKeyRec = { 0 };
 
-static void XaveriusScreenCloseHook(CallbackListPtr *pcbl, ScreenPtr pScreen, void *unused)
+static void
+XaveriusScreenCloseHook(CallbackListPtr *pcbl, ScreenPtr pScreen, void *unused)
 {
     (void)pcbl;
     (void)unused;
@@ -36,7 +37,8 @@ static void XaveriusScreenCloseHook(CallbackListPtr *pcbl, ScreenPtr pScreen, vo
     }
 }
 
-bool XaveriusScreenInit(ScreenPtr pScreen, const XaveriusDDXOps *ops)
+bool
+XaveriusScreenInit(ScreenPtr pScreen, const XaveriusDDXOps *ops)
 {
     if (pScreen == NULL || ops == NULL)
         return false;
@@ -50,16 +52,23 @@ bool XaveriusScreenInit(ScreenPtr pScreen, const XaveriusDDXOps *ops)
     xav_screen->initialized = true;
 
     dixSetPrivate(&pScreen->devPrivates,
-                  &XaveriusScreenPrivateKeyRec, xav_screen);
+                  XaveriusScreenPrivateKey, xav_screen);
 
     dixScreenHookClose(pScreen, XaveriusScreenCloseHook);
 
     return true;
 }
 
-XaveriusScreenPtr XaveriusGetScreen(ScreenPtr pScreen)
+void
+XaveriusScreenFini(ScreenPtr pScreen)
 {
     if (pScreen == NULL)
-        return NULL;
-    return dixLookupPrivate(&pScreen->devPrivates, &XaveriusScreenPrivateKeyRec);
+        return;
+
+    XaveriusScreenPtr xav_screen = dixLookupPrivate(&pScreen->devPrivates,
+                                                     XaveriusScreenPrivateKey);
+    if (xav_screen) {
+        dixSetPrivate(&pScreen->devPrivates, XaveriusScreenPrivateKey, NULL);
+        free(xav_screen);
+    }
 }
